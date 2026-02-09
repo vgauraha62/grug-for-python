@@ -86,7 +86,7 @@ jobs:
           EOF
           )
 
-          pyright --pythonversion "$PY_MAJOR_MINOR"
+          pyright --pythonversion "$PY_MAJOR_MINOR" --exclude grug-tests
 
           python tests.py
           pytest --grug-tests-path=./grug-tests -s -v

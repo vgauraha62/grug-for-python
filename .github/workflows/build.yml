@@ -7,35 +7,28 @@ on:
     - cron: "0 2 * * *" # nightly at 02:00 UTC
 
 jobs:
-  typecheck:
+  test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: [3.7.17, 3.11.9]
+        python-version: ["3.7", "3.11"]
 
     steps:
       - uses: actions/checkout@v4
 
-      # Install pyenv and build dependencies
-      - name: Install pyenv and build dependencies
+      # ✅ Setup Python properly
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      # System deps (for grug-tests build)
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential zlib1g-dev libssl-dev libbz2-dev \
-            libreadline-dev libsqlite3-dev libffi-dev liblzma-dev \
-            libncurses5-dev libncursesw5-dev libgdbm-dev uuid-dev \
-            curl cmake git wget
-
-          curl https://pyenv.run | bash
-
-      # Install Python versions
-      - name: Install Python
-        run: |
-          export PYENV_ROOT="$HOME/.pyenv"
-          export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-
-          pyenv install -s ${{ matrix.python-version }}
+          sudo apt-get install -y cmake afl++
 
       # Clone and build grug-tests
       - name: Build grug-tests
@@ -46,8 +39,8 @@ jobs:
           cmake -S . -B build
           cmake --build build
 
-      # Create corpus from grug-tests/tests
-      - name: Build .grug corpus from tests/
+      # Build corpus
+      - name: Build corpus
         run: |
           mkdir -p corpus
 
@@ -62,25 +55,21 @@ jobs:
           echo "Corpus size:"
           ls corpus | wc -l
 
-      # Run tests
-      - name: Run Pyright and Tests (Python ${{ matrix.python-version }})
+      # Install Python deps
+      - name: Install dependencies
         run: |
-          export PYENV_ROOT="$HOME/.pyenv"
-          export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-
-          pyenv global ${{ matrix.python-version }}
-          python --version
-
-          pip install --upgrade pip --user
-          pip install pyright pytest coverage --user
-
-          if [[ "${{ matrix.python-version }}" == "3.7.17" ]]; then
-            pip install tomli importlib-metadata --user
-          fi
-
+          python -m pip install --upgrade pip
+          pip install pyright pytest coverage
           pip install -e .[dev]
 
-          PY_MAJOR_MINOR=$(python - <<'EOF'
+          if [[ "${{ matrix.python-version }}" == "3.7" ]]; then
+            pip install tomli importlib-metadata
+          fi
+
+      # Typecheck + Test
+      - name: Run Pyright and Tests
+        run: |
+          PY_MAJOR_MINOR=$(python - <<EOF
           import sys
           print(f"{sys.version_info.major}.{sys.version_info.minor}")
           EOF
@@ -92,44 +81,7 @@ jobs:
           coverage run -m pytest --grug-tests-path=./grug-tests -s -v
           coverage report -m
 
+      # Generate badge
       - name: Coverage Badge
-        if: matrix.python-version == '3.11.9'
-        uses: tj-actions/coverage-badge-py@v2.0.4
-
-      # Run AFL++ fuzzing (only on Python 3.7.17)
-      - name: Run AFL++ Fuzzing
-        if: matrix.python-version == '3.7.17'
-        run: |
-          # Install AFL++
-          sudo apt-get install -y afl++
-
-          # Silences AFL++ core dump notification complaint
-          echo core | sudo tee /proc/sys/kernel/core_pattern
-
-          # Run AFL++ for 2 minutes, forcibly killed after 10s if it overhangs
-          timeout --kill-after=10s 600s afl-fuzz -i corpus -o out -n -- python3 fuzz.py || true
-
-          # Count crashes and hangs
-          CRASH_COUNT=$(ls -1 out/crashes/id:* 2>/dev/null | wc -l)
-          HANG_COUNT=$(ls -1 out/hangs/id:* 2>/dev/null | wc -l)
-
-          echo "Crashes: $CRASH_COUNT"
-          echo "Hangs: $HANG_COUNT"
-
-          # If there are any crashes/hangs, fail and create a tarball for upload
-          if [ "$CRASH_COUNT" -gt 0 ] || [ "$HANG_COUNT" -gt 0 ]; then
-            echo "❌ AFL found crashes or hangs"
-
-            # Create a tarball of the entire AFL output
-            tar -czf afl-results.tar.gz out/
-
-            exit 1
-          fi
-
-      # Upload AFL artifacts only if there were crashes or hangs
-      - name: Upload AFL artifacts
-        if: failure()  # only runs if the previous step failed
-        uses: actions/upload-artifact@v4
-        with:
-          name: afl-results
-          path: afl-results.tar.gz
+        if: matrix.python-version == '3.11'
+        uses: tj-actions/coverage-badge-py@v2

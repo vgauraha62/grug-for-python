@@ -96,7 +96,10 @@ jobs:
       # Generate badge
       - name: Coverage Badge
         if: matrix.python-version == '3.11.9'
-        uses: tj-actions/coverage-badge-py@v2.0.4
-        # Workaround for pyenv
-        env:
-          PATH: ${{ runner.user }}/.local/bin:${{ env.PATH }}
+        run: |
+          export PYENV_ROOT="$HOME/.pyenv"
+          export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$HOME/.local/bin:$PATH"
+          pyenv global 3.11.9
+
+          pip install -U coverage-badge --user
+          coverage-badge -o coverage.svg

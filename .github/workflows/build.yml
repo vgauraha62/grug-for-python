@@ -17,18 +17,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ✅ Setup Python properly
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      # System deps (for grug-tests build)
-      - name: Install build dependencies
+      # Install pyenv and build dependencies
+      - name: Install pyenv and build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake afl++
+          sudo apt-get install -y \
+            build-essential zlib1g-dev libssl-dev libbz2-dev \
+            libreadline-dev libsqlite3-dev libffi-dev liblzma-dev \
+            libncurses5-dev libncursesw5-dev libgdbm-dev uuid-dev \
+            curl cmake git wget
+
+          curl https://pyenv.run | bash
+
+      # Install Python versions
+      - name: Install Python
+        run: |
+          export PYENV_ROOT="$HOME/.pyenv"
+          export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+
+          pyenv install -s ${{ matrix.python-version }}
 
       # Clone and build grug-tests
       - name: Build grug-tests
@@ -44,6 +51,7 @@ jobs:
         run: |
           mkdir -p corpus
 
+          # TODO: Why not just collect the regular .grug files, rather than the applied.grug files?
           # Collect all .grug files from tests/*/*/*.grug
           find grug-tests/tests -path "*/results/applied.grug" -prune -o \
             -path "grug-tests/tests/*/*/*.grug" -type f -print | while read f; do
@@ -55,21 +63,25 @@ jobs:
           echo "Corpus size:"
           ls corpus | wc -l
 
-      # Install Python deps
-      - name: Install dependencies
+      # Run tests
+      - name: Run Pyright and Tests (Python ${{ matrix.python-version }})
         run: |
-          python -m pip install --upgrade pip
-          pip install pyright pytest coverage
-          pip install -e .[dev]
+          export PYENV_ROOT="$HOME/.pyenv"
+          export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
-          if [[ "${{ matrix.python-version }}" == "3.7" ]]; then
-            pip install tomli importlib-metadata
+          pyenv global ${{ matrix.python-version }}
+          python --version
+
+          pip install --upgrade pip --user
+          pip install pyright pytest coverage --user
+
+          if [[ "${{ matrix.python-version }}" == "3.7.17" ]]; then
+            pip install tomli importlib-metadata --user
           fi
 
-      # Typecheck + Test
-      - name: Run Pyright and Tests
-        run: |
-          PY_MAJOR_MINOR=$(python - <<EOF
+          pip install -e .[dev]
+
+          PY_MAJOR_MINOR=$(python - <<'EOF'
           import sys
           print(f"{sys.version_info.major}.{sys.version_info.minor}")
           EOF
@@ -83,5 +95,5 @@ jobs:
 
       # Generate badge
       - name: Coverage Badge
-        if: matrix.python-version == '3.11'
-        uses: tj-actions/coverage-badge-py@v2
+        if: matrix.python-version == '3.11.9'
+        uses: tj-actions/coverage-badge-py@v2.0.4

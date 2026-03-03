@@ -1,4 +1,4 @@
-# grug for Python · ![Coverage](.github/workflows/coverage.svg)
+# grug for Python · ![Coverage](.github/badges/coverage.svg)
 
 This repository provides Python bindings, a frontend, and a backend for [grug](https://github.com/grug-lang/grug). It passes all tests in [grug-lang/grug-tests](https://github.com/grug-lang/grug-tests).
 

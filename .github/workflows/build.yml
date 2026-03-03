@@ -72,7 +72,7 @@ jobs:
           python --version
 
           pip install --upgrade pip --user
-          pip install pyright pytest --user
+          pip install pyright pytest coverage --user
 
           if [[ "${{ matrix.python-version }}" == "3.7.17" ]]; then
             pip install tomli importlib-metadata --user
@@ -89,7 +89,7 @@ jobs:
           pyright --pythonversion "$PY_MAJOR_MINOR"
 
           python tests.py
-          pytest --grug-tests-path=./grug-tests -s -v
+          coverage run -m pytest --grug-tests-path=./grug-tests -s -v
 
       # Run AFL++ fuzzing (only on Python 3.7.17)
       - name: Run AFL++ Fuzzing

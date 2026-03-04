@@ -5,8 +5,6 @@ ROOT = Path(__file__).resolve().parent
 COVERAGE_FILE = ROOT / ".coverage"
 
 COVERAGE_BASE_CMD = [
-    "python",
-    "-m",
     "coverage",
     "run",
     "--append",

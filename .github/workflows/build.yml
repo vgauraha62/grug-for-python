@@ -20,7 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install pyenv and build dependencies
       - name: Install pyenv and build dependencies
         run: |
           sudo apt-get update
@@ -32,7 +31,6 @@ jobs:
 
           curl https://pyenv.run | bash
 
-      # Install Python versions
       - name: Install Python
         run: |
           export PYENV_ROOT="$HOME/.pyenv"
@@ -40,8 +38,7 @@ jobs:
 
           pyenv install -s ${{ matrix.python-version }}
 
-      # Clone and build grug-tests
-      - name: Build grug-tests
+      - name: Clone and build grug-tests
         run: |
           git clone https://github.com/grug-lang/grug-tests
           cd grug-tests
@@ -49,7 +46,6 @@ jobs:
           cmake -S . -B build
           cmake --build build
 
-      # Build corpus
       - name: Build corpus
         run: |
           mkdir -p corpus
@@ -66,8 +62,7 @@ jobs:
           echo "Corpus size:"
           ls corpus | wc -l
 
-      # Run tests
-      - name: Run Pyright and Tests (Python ${{ matrix.python-version }})
+      - name: Run Pyright (Python ${{ matrix.python-version }})
         run: |
           export PYENV_ROOT="$HOME/.pyenv"
           export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
@@ -92,14 +87,19 @@ jobs:
 
           pyright --pythonversion "$PY_MAJOR_MINOR"
 
-          python tests.py
-
+      - name: Run grug-tests tests (Python ${{ matrix.python-version }})
+        run: |
           coverage run -m pytest --grug-tests-path=./grug-tests -s -v
 
-          # Fail CI if coverage < 100%
+      - name: Run grug-for-python tests (Python ${{ matrix.python-version }})
+        run: |
+          python tests.py
+
+      - name: Report coverage (Python ${{ matrix.python-version }})
+        run: |
           coverage report -m --fail-under=100
 
-      - name: Generate Coverage Badge
+      - name: Generate coverage badge
         if: matrix.python-version == '3.11.9'
         run: |
           export PYENV_ROOT="$HOME/.pyenv"

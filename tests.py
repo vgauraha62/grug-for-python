@@ -1,6 +1,18 @@
 import subprocess
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent
+COVERAGE_FILE = ROOT / ".coverage"
+
+COVERAGE_BASE_CMD = [
+    "python",
+    "-m",
+    "coverage",
+    "run",
+    "--append",
+    f"--data-file={COVERAGE_FILE}",
+]
+
 
 def run_examples():
     for example in Path("examples").glob("*/example.py"):
@@ -8,7 +20,10 @@ def run_examples():
         print(f"\nRunning {example_dir}...")
         try:
             subprocess.run(
-                ["python", example.name], cwd=example_dir, timeout=3, check=True
+                [*COVERAGE_BASE_CMD, example.name],
+                cwd=example_dir,
+                timeout=3,
+                check=True,
             )
         except subprocess.TimeoutExpired:
             pass
@@ -19,7 +34,7 @@ def run_package_tests():
         test_dir = test_file.parent
         print(f"\nRunning {test_dir}...")
         subprocess.run(
-            ["python", test_file.name],
+            [*COVERAGE_BASE_CMD, test_file.name],
             cwd=test_dir,
             check=True,
         )

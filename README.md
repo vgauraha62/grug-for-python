@@ -51,17 +51,11 @@ If you are on a Python version older than 3.11, you will need to install these:
 pip install tomli importlib-metadata
 ```
 
-If you want to run the tests, you will need to install `pytest`:
+If you want to run the tests and check their coverage, you will need to install `pytest` and `coverage`:
 
 ```sh
-pip install pytest
+pip install pytest coverage
 pip install -e .
-```
-
-If you additionally want to output the code coverage of the tests, install `coverage`:
-
-```sh
-pip install coverage
 ```
 
 ## Tests
@@ -96,10 +90,10 @@ pip install -e .
 In this grug-for-python repository, you can run all tests using this command:
 
 ```sh
-pytest --grug-tests-path=../grug-tests -s -v
+coverage run -m pytest --grug-tests-path=../grug-tests -s -v
 ```
 
-You can prepend `coverage run -m ` to it if you want to additionally output code coverage. It will output a `.coverage` file which you can inspect with `coverage report -m` and `coverage html`.
+It will output a `.coverage` file which you can inspect with `coverage report -m` and `coverage html`.
 
 Pass `--whitelisted-test=f32_too_big` to only run the test called `f32_too_big`.
 

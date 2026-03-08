@@ -8,7 +8,7 @@ import pytest
 
 import grug
 from grug.entity import Entity, ReraisedGameFnError, StackOverflow, TimeLimitExceeded
-from grug.grug_state import GrugRuntimeErrorType, GrugState, GrugFile
+from grug.grug_state import GrugFile, GrugRuntimeErrorType, GrugState
 from grug.grug_value import GrugValue
 
 
@@ -211,7 +211,6 @@ def test_grug(
             mods_dir_path=ctypes.string_at(mod_api_path).decode(),
         )
         GameFnRegistrator(state, grug_lib).register_game_fns()
-
         return 0
 
     @ctypes.CFUNCTYPE(None, ctypes.c_void_p)
@@ -243,43 +242,46 @@ class GameFnRegistrator:
         self.grug_lib = grug_lib
 
     def register_game_fns(self):
-        self._register_void_argless("nothing")
-        self._register_value_argless("magic")
-        self._register_void("initialize")
-        self._register_void("initialize_bool")
-        self._register_value("identity")
-        self._register_value("max")
-        self._register_void("say")
-        self._register_value("sin")
-        self._register_value("cos")
-        self._register_void("mega")
-        self._register_value_argless("get_false")
-        self._register_void("set_is_happy")
-        self._register_void("mega_f32")
-        self._register_void("mega_i32")
-        self._register_void("draw")
-        self._register_void_argless("blocked_alrm")
-        self._register_void("spawn")
-        self._register_value("has_resource")
-        self._register_value("has_entity")
-        self._register_value("has_string")
-        self._register_value_argless("get_opponent")
-        self._register_value_argless("get_os")
-        self._register_void("set_d")
-        self._register_void("set_opponent")
-        self._register_void("motherload")
-        self._register_void("motherload_subless")
-        self._register_void("offset_32_bit_f32")
-        self._register_void("offset_32_bit_i32")
-        self._register_void("offset_32_bit_string")
-        self._register_void("talk")
-        self._register_value("get_position")
-        self._register_void("set_position")
-        self._register_void_argless("cause_game_fn_error")
-        self._register_void_argless("call_on_b_fn")
-        self._register_void("store")
-        self._register_value_argless("retrieve")
-        self._register_value("box_number")
+        for name in (
+            "nothing",
+            "magic",
+            "initialize",
+            "initialize_bool",
+            "identity",
+            "max",
+            "say",
+            "sin",
+            "cos",
+            "mega",
+            "get_false",
+            "set_is_happy",
+            "mega_f32",
+            "mega_i32",
+            "draw",
+            "blocked_alrm",
+            "spawn",
+            "has_resource",
+            "has_entity",
+            "has_string",
+            "get_opponent",
+            "get_os",
+            "set_d",
+            "set_opponent",
+            "motherload",
+            "motherload_subless",
+            "offset_32_bit_f32",
+            "offset_32_bit_i32",
+            "offset_32_bit_string",
+            "talk",
+            "get_position",
+            "set_position",
+            "cause_game_fn_error",
+            "call_on_b_fn",
+            "store",
+            "retrieve",
+            "box_number",
+        ):
+            self._register_fn(name)
 
     def _get_c_fn(self, name: str):
         return self.grug_lib["game_fn_" + name]
@@ -316,40 +318,7 @@ class GameFnRegistrator:
         )
         return c_to_py_value(value, return_type)
 
-    def _get_return_type(self, name: str):
-        return self.state.mod_api["game_functions"][name].get("return_type")
-
-    def _register_void(self, name: str):
-        c_fn = self._get_c_fn(name)
-
-        c_fn.argtypes = (
-            ctypes.c_void_p,
-            ctypes.POINTER(GrugValueUnion),
-        )
-        c_fn.restype = None
-
-        def fn(state: GrugState, *args: GrugValue):
-            c_args, _keepalive = self._get_c_args(*args)
-            c_fn(0, c_args)
-            if _grug_runtime_err is not None:
-                raise _grug_runtime_err
-
-        self.state._register_game_fn(name, fn)  # pyright: ignore[reportPrivateUsage]
-
-    def _register_void_argless(self, name: str):
-        c_fn = self._get_c_fn(name)
-
-        c_fn.argtypes = (ctypes.c_void_p,)
-        c_fn.restype = None
-
-        def fn(state: GrugState, *args: GrugValue):
-            c_fn(0)
-            if _grug_runtime_err is not None:
-                raise _grug_runtime_err
-
-        self.state._register_game_fn(name, fn)  # pyright: ignore[reportPrivateUsage]
-
-    def _register_value(self, name: str):
+    def _register_fn(self, name: str):
         c_fn = self._get_c_fn(name)
 
         c_fn.argtypes = (
@@ -358,27 +327,11 @@ class GameFnRegistrator:
         )
         c_fn.restype = GrugValueWorkaround
 
-        return_type = self._get_return_type(name)
+        return_type = self.state.mod_api["game_functions"][name].get("return_type")
 
         def fn(state: GrugState, *args: GrugValue):
             c_args, _keepalive = self._get_c_args(*args)
-            result: GrugValueWorkaround = c_fn(0, *c_args)
-            if _grug_runtime_err is not None:
-                raise _grug_runtime_err
-            return self._unpack_workaround(result, return_type)
-
-        self.state._register_game_fn(name, fn)  # pyright: ignore[reportPrivateUsage]
-
-    def _register_value_argless(self, name: str):
-        c_fn = self._get_c_fn(name)
-
-        c_fn.argtypes = (ctypes.c_void_p,)
-        c_fn.restype = GrugValueWorkaround
-
-        return_type = self._get_return_type(name)
-
-        def fn(state: GrugState, *args: GrugValue):
-            result: GrugValueWorkaround = c_fn(0)
+            result: GrugValueWorkaround = c_fn(0, c_args)
             if _grug_runtime_err is not None:
                 raise _grug_runtime_err
             return self._unpack_workaround(result, return_type)

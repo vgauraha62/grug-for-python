@@ -32,7 +32,7 @@ on_run() {
     items: List = dict_items(d)
     helper_print_list(items, "[[1.0, 10.0], [2.0, 20.0], [3.0, 30.0], [4.0, 40.0]] after items():")
 
-    x: number = dict_number_pop(d, 3)
+    x: number = dict_number_number_pop(d, 3)
     helper_print_dict(d, "{1: 10, 2: 20, 4: 40} after pop(3):")
 
     pair: List = dict_popitem(d)

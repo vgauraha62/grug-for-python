@@ -109,6 +109,20 @@
                 }
             ]
         },
+        "dict_number_number_pop": {
+            "description": "Removes and returns the value for a number key in a Dict. Returns 0 if the key is not present.",
+            "return_type": "number",
+            "arguments": [
+                {
+                    "name": "dict",
+                    "type": "Dict"
+                },
+                {
+                    "name": "key",
+                    "type": "number"
+                }
+            ]
+        },
         "dict_number_number_set": {
             "description": "Associates a number key with a number value in a Dict. If the key already exists, its value is overwritten.",
             "arguments": [
@@ -139,20 +153,6 @@
                 },
                 {
                     "name": "value",
-                    "type": "number"
-                }
-            ]
-        },
-        "dict_number_pop": {
-            "description": "Removes and returns the value for a number key in a Dict. Returns 0 if the key is not present.",
-            "return_type": "number",
-            "arguments": [
-                {
-                    "name": "dict",
-                    "type": "Dict"
-                },
-                {
-                    "name": "key",
                     "type": "number"
                 }
             ]

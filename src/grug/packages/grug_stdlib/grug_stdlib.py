@@ -313,7 +313,6 @@ def dict_fns() -> List[Callable[..., Any]]:
         fns.append(fn)
 
     for value_type in VALUE_TYPES:
-        fns.append(wrap(dict_pop, f"dict_{value_type}_pop"))
         fns.append(wrap(dict_fromkeys, f"dict_{value_type}_fromkeys"))
 
     for key_type in HASHABLE_TYPES:
@@ -324,6 +323,7 @@ def dict_fns() -> List[Callable[..., Any]]:
             fns.append(
                 wrap(dict_get_default, f"dict_{key_type}_{value_type}_get_default")
             )
+            fns.append(wrap(dict_pop, f"dict_{key_type}_{value_type}_pop"))
             fns.append(wrap(dict_set, f"dict_{key_type}_{value_type}_set"))
             fns.append(
                 wrap(dict_set_default, f"dict_{key_type}_{value_type}_set_default")

@@ -15,22 +15,28 @@ COVERAGE_BASE_CMD = [
 
 
 def run_examples():
-    for example in Path("examples").glob("*/example.py"):
+    examples_path = ROOT / "examples"
+    for example in examples_path.glob("*/example.py"):
         example_dir = example.parent
         print(f"\nRunning {example_dir}...")
-        try:
-            subprocess.run(
-                [*COVERAGE_BASE_CMD, example.name],
-                cwd=example_dir,
-                timeout=3,
-                check=True,
-            )
-        except subprocess.TimeoutExpired:
-            pass
+
+        # Use Popen to control the termination sequence,
+        # since subprocess.run(timeout=3) doesn't output coverage
+        with subprocess.Popen(
+            [*COVERAGE_BASE_CMD, example.name], cwd=example_dir
+        ) as proc:
+            try:
+                proc.communicate(timeout=1)
+            except subprocess.TimeoutExpired:
+                # Send SIGTERM instead of the uncatchable SIGKILL
+                proc.terminate()
+                # Wait for the process to execute its cleanup routines and exit
+                proc.communicate()
 
 
 def run_package_tests():
-    for test_file in Path("src/grug/packages").glob("**/tests/tests.py"):
+    tests_path = ROOT / "src/grug/packages"
+    for test_file in tests_path.glob("**/tests/tests.py"):
         test_dir = test_file.parent
         print(f"\nRunning {test_dir}...")
         subprocess.run(

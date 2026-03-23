@@ -1,5 +1,3 @@
-import time
-
 import grug
 from grug import GrugState
 from grug.entity import GameFnError

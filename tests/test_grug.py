@@ -125,6 +125,8 @@ def test_grug(
     id_map: dict[int, GrugFile] = {}
     path_map: dict[str, int] = {}
 
+    current_entity: Optional[Entity] = None
+
     @ctypes.CFUNCTYPE(
         ctypes.c_void_p,
         ctypes.c_void_p,
@@ -160,24 +162,24 @@ def test_grug(
     @ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
     def init_globals(state_ptr: int, file_id: int) -> None:
         nonlocal id_map
+        nonlocal current_entity
         assert state
         try:
             global _grug_runtime_err
             _grug_runtime_err = None
 
+            state.next_id = 42
             assert state
             grug_file = id_map[file_id]
             assert grug_file
 
-            grug_file.create_entity()
+            current_entity = grug_file.create_entity()
         except (TimeLimitExceeded, StackOverflow, ReraisedGameFnError) as e:
             # Necessary, as propagating exceptions from
             # this CFUNCTYPE function doesn't work.
             _grug_runtime_err = e
         except Exception:
             traceback.print_exc(file=sys.stderr)
-        finally: 
-            state.next_id -= 1
         
 
     @ctypes.CFUNCTYPE(
@@ -197,6 +199,7 @@ def test_grug(
     ) -> None:
         nonlocal id_map
         nonlocal state
+        nonlocal current_entity
         assert state
         try:
             global _grug_runtime_err
@@ -206,7 +209,7 @@ def test_grug(
 
             grug_file = id_map[file_id]
             assert grug_file
-            grug_entity = grug_file.create_entity()
+            assert current_entity
             on_fn_decl = grug_file.on_fns.get(on_fn_name)
             if not on_fn_decl:
                 raise RuntimeError(
@@ -219,8 +222,8 @@ def test_grug(
                 for arg, argument in zip(c_args or [], on_fn_decl.arguments)
             ]
 
-            assert grug_entity is not None
-            on_fn = getattr(grug_entity, on_fn_name)
+            assert current_entity is not None
+            on_fn = getattr(current_entity, on_fn_name)
             on_fn(*args)
         except (TimeLimitExceeded, StackOverflow, ReraisedGameFnError) as e:
             # Necessary, as propagating exceptions from

@@ -167,7 +167,7 @@ def test_grug(
             global _grug_runtime_err
             _grug_runtime_err = None
 
-assert state
+            assert state
             state.next_id = 42
             grug_file = id_map[file_id]
             assert grug_file

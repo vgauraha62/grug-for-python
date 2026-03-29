@@ -597,9 +597,7 @@ class Parser:
         self.increase_parsing_depth()
         self.consume_space(i)
         self.consume_token_type(i, TokenType.OPEN_BRACE_TOKEN)
-
-        if self.peek_token(i[0]).type == TokenType.NEWLINE_TOKEN:
-            i[0] += 1
+        self.consume_token_type(i, TokenType.NEWLINE_TOKEN)
 
         self.indentation += 1
 

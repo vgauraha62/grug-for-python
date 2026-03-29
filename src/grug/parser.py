@@ -379,10 +379,7 @@ class Parser:
         i[0] += 1
 
     def get_token_line_number(self, token_index: int):
-        if token_index >= len(self.tokens):
-            raise ParserError(
-                f"token_index {token_index} out of bounds in get_token_line_number()"
-            )
+        assert token_index < len(self.tokens)
         line_number = 1
         for idx in range(token_index):
             if self.tokens[idx].type == TokenType.NEWLINE_TOKEN:

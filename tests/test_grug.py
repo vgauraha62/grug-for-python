@@ -136,7 +136,7 @@ def test_grug(
     def compile_grug_file(
         state_ptr: int,
         path: bytes,
-        out_err: ctypes.POINTER(ctypes.c_char_p), # type: ignore
+        out_err: ctypes.POINTER(ctypes.c_char_p),  # type: ignore
     ) -> int:
         nonlocal id_map
         nonlocal path_map
@@ -179,7 +179,6 @@ def test_grug(
             _grug_runtime_err = e
         except Exception:
             traceback.print_exc(file=sys.stderr)
-        
 
     @ctypes.CFUNCTYPE(
         None,

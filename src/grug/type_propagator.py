@@ -135,11 +135,12 @@ class TypePropagator:
         first_type_name: Optional[str],
         second_type: Optional[Type],
         second_type_name: Optional[str],
-    ): 
+    ):
         if first_type != second_type:
             return True
-        if (first_type_name == "id" and second_type ==
-            Type.ID) or first_type_name == second_type_name:
+        if (
+            first_type_name == "id" and second_type == Type.ID
+        ) or first_type_name == second_type_name:
             return False
         return True
 
@@ -281,7 +282,9 @@ class TypePropagator:
                     f"Function call '{fn_name}' expected the type {param.type_name} for argument '{param.name}', but got a function call that doesn't return anything"
                 )
 
-            if self.are_incompatible_types(param.type, param.type_name, arg.result.type, arg.result.type_name):
+            if self.are_incompatible_types(
+                param.type, param.type_name, arg.result.type, arg.result.type_name
+            ):
                 raise TypePropagationError(
                     f"Function call '{fn_name}' expected the type {param.type_name} for argument '{param.name}', but got {arg.result.type_name}"
                 )
@@ -427,7 +430,12 @@ class TypePropagator:
             if var:
                 raise TypePropagationError(f"The variable '{stmt.name}' already exists")
 
-            if self.are_incompatible_types(stmt.type, stmt.type_name, stmt.expr.result.type, stmt.expr.result.type_name):
+            if self.are_incompatible_types(
+                stmt.type,
+                stmt.type_name,
+                stmt.expr.result.type,
+                stmt.expr.result.type_name,
+            ):
                 raise TypePropagationError(
                     f"Can't assign {stmt.expr.result.type_name} to '{stmt.name}', which has type {stmt.type_name}"
                 )
@@ -442,7 +450,12 @@ class TypePropagator:
             if stmt.name in self.global_variables and var.type == Type.ID:
                 raise TypePropagationError("Global id variables can't be reassigned")
 
-            if self.are_incompatible_types(var.type, var.type_name, stmt.expr.result.type, stmt.expr.result.type_name):
+            if self.are_incompatible_types(
+                var.type,
+                var.type_name,
+                stmt.expr.result.type,
+                stmt.expr.result.type_name,
+            ):
                 raise TypePropagationError(
                     f"Can't assign {stmt.expr.result.type_name} to '{var.name}', which has type {var.type_name}"
                 )
@@ -476,7 +489,12 @@ class TypePropagator:
                             f"Function '{self.filled_fn_name}' wasn't supposed to return any value"
                         )
 
-                    if self.are_incompatible_types(self.fn_return_type, self.fn_return_type_name, stmt.value.result.type, stmt.value.result.type_name):
+                    if self.are_incompatible_types(
+                        self.fn_return_type,
+                        self.fn_return_type_name,
+                        stmt.value.result.type,
+                        stmt.value.result.type_name,
+                    ):
                         raise TypePropagationError(
                             f"Function '{self.filled_fn_name}' is supposed to return {self.fn_return_type_name}, not {stmt.value.result.type_name}"
                         )
@@ -614,7 +632,12 @@ class TypePropagator:
                             "Global variables can't be assigned 'me'"
                         )
 
-                if self.are_incompatible_types(stmt.type, stmt.type_name, stmt.expr.result.type, stmt.expr.result.type_name):
+                if self.are_incompatible_types(
+                    stmt.type,
+                    stmt.type_name,
+                    stmt.expr.result.type,
+                    stmt.expr.result.type_name,
+                ):
                     raise TypePropagationError(
                         f"Can't assign {stmt.expr.result.type_name} to '{stmt.name}', which has type {stmt.type_name}"
                     )

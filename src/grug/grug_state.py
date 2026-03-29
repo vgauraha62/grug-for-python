@@ -1,9 +1,10 @@
 import json
 import sys
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Sequence, cast, Optional, List
-from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+
 from grug.grug_value import GrugValue
 
 from .parser import HelperFn, OnFn, Parser, VariableStatement
@@ -16,6 +17,7 @@ class GrugRuntimeErrorType(Enum):
     STACK_OVERFLOW = 0  # Using auto() here would assign 1
     TIME_LIMIT_EXCEEDED = auto()
     GAME_FN_ERROR = auto()
+
 
 GrugRuntimeErrorHandler = Callable[[str, GrugRuntimeErrorType, str, str], None]
 
@@ -32,6 +34,7 @@ class GrugPackage:
     def set_prefix(self, new_prefix: str):
         self.prefix = new_prefix
         return self
+
 
 @dataclass
 class GrugFile:
@@ -51,6 +54,7 @@ class GrugFile:
 
         return Entity(self)
 
+
 @dataclass
 class GrugDir:
     """Represents a directory of grug files and subdirectories."""
@@ -58,6 +62,7 @@ class GrugDir:
     name: str
     files: Dict[str, GrugFile] = field(default_factory=lambda: {})
     dirs: Dict[str, "GrugDir"] = field(default_factory=lambda: {})
+
 
 def default_runtime_error_handler(
     reason: str,
@@ -374,5 +379,6 @@ class GrugState:
         Path(output_grug_path).write_text(grug_text)
 
         return False
-        
+
+
 GameFn = Callable[..., Optional[GrugValue]]

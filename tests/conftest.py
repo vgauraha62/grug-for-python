@@ -1,11 +1,11 @@
 import ctypes
+import sys
 from pathlib import Path
 from typing import Optional, cast
 
 import pytest
 from test_grug import GrugStateVTableStruct
 
-import sys
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
@@ -22,6 +22,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         required=False,
         help="A specific test name to run",
     )
+
 
 @pytest.fixture(scope="session")
 def grug_tests_path(request: pytest.FixtureRequest) -> Path:
@@ -52,7 +53,7 @@ def grug_lib(grug_tests_path: Path) -> ctypes.PyDLL:
     """
     Loads tests.so and sets argument signatures
     """
-    
+
     if sys.platform == "win32":
         lib_path = grug_tests_path / "build/tests.dll"
     elif sys.platform == "linux":

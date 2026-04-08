@@ -177,7 +177,7 @@ class Tokenizer:
                         raise TokenizerError(
                             f"Unexpected null byte on line {self.get_character_line_number(i)}"
                         )
-                    elif src[i] == "\\" and i + 1 < len(src) and src[i + 1] in "\r\n":
+                    elif src[i] == "\\" and i + 1 < len(src) and src[i + 1] == "\n":
                         raise TokenizerError(
                             f"Unexpected line break in string on line {self.get_character_line_number(i)}"
                         )
@@ -220,7 +220,7 @@ class Tokenizer:
                     )
                 i += 1
                 start = i
-                while i < len(src) and src[i] not in "\r\n":
+                while i < len(src) and src[i] != "\n":
                     if src[i] == "\0":
                         raise TokenizerError(
                             f"Unexpected null byte on line {self.get_character_line_number(i)}"

@@ -42,7 +42,7 @@ jobs:
         run: |
           git clone https://github.com/grug-lang/grug-tests
           cd grug-tests
-          git checkout development
+          git checkout main
           cmake -S . -B build
           cmake --build build
 

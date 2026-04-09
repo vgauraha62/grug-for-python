@@ -123,7 +123,6 @@ def test_grug(
     state: Optional[GrugState] = None
 
     id_map: dict[int, GrugFile] = {}
-    path_map: dict[str, int] = {}
 
     current_entity: Optional[Entity] = None
 
@@ -136,24 +135,16 @@ def test_grug(
     def compile_grug_file(
         state_ptr: int,
         path: bytes,
-        out_err: ctypes.POINTER(ctypes.c_char_p), # type: ignore
+        out_err: ctypes.POINTER(ctypes.c_char_p),  # type: ignore
     ) -> int:
         nonlocal id_map
-        nonlocal path_map
         try:
             assert state
             path_str = path.decode()
             grug_file = state.compile_grug_file(path_str)
 
-            if path_str in path_map:
-                file_id = path_map[path_str]
-                id_map[file_id] = grug_file
-            else:
-                file_id = len(path_map) + 1
-                path_map[path_str] = file_id
-                # sanity check
-                assert file_id not in id_map
-                id_map[file_id] = grug_file
+            file_id = len(id_map) + 1
+            id_map[file_id] = grug_file
             return file_id
         except Exception as e:
             out_err[0] = str(e).encode()
@@ -169,6 +160,7 @@ def test_grug(
 
             assert state
             state.next_id = 42
+
             grug_file = id_map[file_id]
             assert grug_file
 
@@ -177,9 +169,8 @@ def test_grug(
             # Necessary, as propagating exceptions from
             # this CFUNCTYPE function doesn't work.
             _grug_runtime_err = e
-        except Exception:
+        except Exception:  # pragma: no cover
             traceback.print_exc(file=sys.stderr)
-        
 
     @ctypes.CFUNCTYPE(
         None,
@@ -208,11 +199,9 @@ def test_grug(
             grug_file = id_map[file_id]
             assert grug_file
             assert current_entity
+
             on_fn_decl = grug_file.on_fns.get(on_fn_name)
-            if not on_fn_decl:
-                raise RuntimeError(
-                    f"The function '{on_fn_name}' is not defined by the file {grug_file.relative_path}"
-                )
+            assert on_fn_decl
 
             assert len(on_fn_decl.arguments) == args_len
             args = [
@@ -220,14 +209,11 @@ def test_grug(
                 for arg, argument in zip(c_args or [], on_fn_decl.arguments)
             ]
 
-            assert current_entity is not None
-            on_fn = getattr(current_entity, on_fn_name)
-            on_fn(*args)
+            current_entity._run_on_fn(on_fn_name, *args)
         except (TimeLimitExceeded, StackOverflow, ReraisedGameFnError) as e:
-            # Necessary, as propagating exceptions from
-            # this CFUNCTYPE function doesn't work.
+            # Necessary, as propagating exceptions from CFUNCTYPE doesn't work.
             _grug_runtime_err = e
-        except Exception:
+        except Exception:  # pragma: no cover
             traceback.print_exc(file=sys.stderr)
 
     @ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p)
@@ -287,11 +273,14 @@ def test_grug(
     @ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p)
     def create_grug_state(tests_path: bytes, mod_api_path: bytes) -> int:
         nonlocal state
-        state = grug.init(
-            runtime_error_handler=custom_runtime_error_handler,
-            mod_api_path=ctypes.string_at(tests_path).decode(),
-            mods_dir_path=ctypes.string_at(mod_api_path).decode(),
-        )
+        try:
+            state = grug.init(
+                runtime_error_handler=custom_runtime_error_handler,
+                mod_api_path=ctypes.string_at(tests_path).decode(),
+                mods_dir_path=ctypes.string_at(mod_api_path).decode(),
+            )
+        except Exception as e:  # pragma: no cover
+            print(e, file=sys.stderr)
         state.next_id = 42
         GameFnRegistrator(state, grug_lib).register_game_fns()
         return 0
@@ -347,6 +336,7 @@ class GameFnRegistrator:
             "draw",
             "blocked_alrm",
             "spawn",
+            "spawn_d",
             "has_resource",
             "has_entity",
             "has_string",
@@ -359,6 +349,7 @@ class GameFnRegistrator:
             "offset_32_bit_f32",
             "offset_32_bit_i32",
             "offset_32_bit_string",
+            "print_csv",
             "talk",
             "get_position",
             "set_position",
@@ -424,5 +415,5 @@ class GameFnRegistrator:
 
 
 # Enables stepping through code with VS Code its Python debugger.
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     pytest.main(sys.argv)

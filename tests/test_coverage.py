@@ -2,31 +2,14 @@
 import json
 import os
 import tempfile
-from pathlib import Path
-from unittest.mock import patch
+from typing import Any
 
 import pytest
 
 import grug
-from grug.grug_state import GrugDir, GrugPackage, GrugState, default_runtime_error_handler
+from grug.grug_state import default_runtime_error_handler
 from grug.parser import EntityExpr, ResourceExpr
 from grug.serializer import Serializer
-
-
-def _create_state_with_mod_api(mod_api_content: dict, mods_dir: str = "mods"):
-    """Helper to create a GrugState with a custom mod_api.json."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        mod_api_path = os.path.join(tmpdir, "mod_api.json")
-        os.makedirs(os.path.join(tmpdir, mods_dir), exist_ok=True)
-        
-        with open(mod_api_path, "w") as f:
-            json.dump(mod_api_content, f)
-        
-        return grug.init(
-            runtime_error_handler=default_runtime_error_handler,
-            mod_api_path=mod_api_path,
-            mods_dir_path=os.path.join(tmpdir, mods_dir),
-        )
 
 
 class TestGrugStateModApiValidation:
@@ -54,8 +37,8 @@ class TestGrugStateModApiValidation:
         with tempfile.TemporaryDirectory() as tmpdir:
             mod_api_path = os.path.join(tmpdir, "mod_api.json")
             os.makedirs(os.path.join(tmpdir, "mods"), exist_ok=True)
-            
-            mod_api = {
+
+            mod_api: dict[str, Any] = {
                 "entities": {
                     "Dog": "not a dict"
                 },
@@ -104,12 +87,12 @@ class TestGrugStateModApiValidation:
         with tempfile.TemporaryDirectory() as tmpdir:
             mod_api_path = os.path.join(tmpdir, "mod_api.json")
             os.makedirs(os.path.join(tmpdir, "mods"), exist_ok=True)
-            
-            mod_api = {
+
+            mod_api: dict[str, Any] = {
                 "entities": {},
                 "game_functions": ["not", "a", "dict"]
             }
-            
+
             with open(mod_api_path, "w") as f:
                 json.dump(mod_api, f)
             
@@ -152,8 +135,8 @@ class TestGrugStateModApiValidation:
         with tempfile.TemporaryDirectory() as tmpdir:
             mod_api_path = os.path.join(tmpdir, "mod_api.json")
             os.makedirs(os.path.join(tmpdir, "mods"), exist_ok=True)
-            
-            mod_api = {
+
+            mod_api: dict[str, Any] = {
                 "entities": {
                     "Dog": {
                         "description": "A dog",
@@ -226,7 +209,7 @@ class TestCompileAllMods:
                     f.write("")  # empty grug file
             
             # Create minimal mod_api.json
-            mod_api = {
+            mod_api: dict[str, Any] = {
                 "entities": {
                     "Dog": {
                         "description": "A dog",
@@ -257,15 +240,15 @@ class TestSerializerExprTypes:
     def test_resource_expr_serialization(self):
         """Test Line 61: ResourceExpr serialization."""
         expr = ResourceExpr(string="path/to/resource.txt")
-        result = Serializer._serialize_expr(expr)
-        
+        result = Serializer._serialize_expr(expr)  # type: ignore[reportPrivateUsage]
+
         assert result["type"] == "RESOURCE_EXPR"
         assert result["str"] == "path/to/resource.txt"
 
     def test_entity_expr_serialization(self):
         """Test Line 63: EntityExpr serialization."""
         expr = EntityExpr(string="SomeEntity")
-        result = Serializer._serialize_expr(expr)
-        
+        result = Serializer._serialize_expr(expr)  # type: ignore[reportPrivateUsage]
+
         assert result["type"] == "ENTITY_EXPR"
         assert result["str"] == "SomeEntity"

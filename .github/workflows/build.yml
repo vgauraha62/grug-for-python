@@ -52,6 +52,15 @@ jobs:
 
           pyenv install -s ${{ matrix.python-version }}
 
+      - name: Install MinGW (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install mingw -y
+          refreshenv
+          echo "MinGW installed successfully"
+          gcc --version
+        shell: pwsh
+
       - name: Clone and build grug-tests (Ubuntu)
         if: runner.os == 'Linux'
         run: |
@@ -62,17 +71,23 @@ jobs:
           cmake --build build
         shell: bash
 
-      - name: Clone grug-tests (Windows)
+      - name: Clone and build grug-tests (Windows)
         if: runner.os == 'Windows'
         run: |
           git clone https://github.com/grug-lang/grug-tests
           cd grug-tests
           git checkout main
-          (Get-Content CMakeLists.txt) -replace '-Wall', '' -replace '-Wextra', '' | Set-Content CMakeLists.txt
 
-          # Configure and build
-          cmake -S . -B build
-          cmake --build build --config Release
+          # Build using MinGW/GCC as specified in grug-tests README
+          cmake -S . -B build -G "MinGW Makefile" -DCMAKE_C_COMPILER=gcc
+          cmake --build build
+
+          # Verify build succeeded
+          if (-not (Test-Path "build/smoketest.exe")) {
+            Write-Error "Build failed - smoketest.exe not created"
+            exit 1
+          }
+          Write-Host "Build successful - smoketest.exe created"
         shell: pwsh
 
       - name: Build corpus

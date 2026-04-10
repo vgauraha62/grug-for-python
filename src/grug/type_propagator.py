@@ -102,7 +102,7 @@ class TypePropagator:
     def add_global_variable(self, name: str, var_type: Type, type_name: str):
         if name in self.global_variables:
             raise TypePropagationError(
-                f"The global variable '{name}' shadows an earlier global variable with the same name, so change the name of one of them"
+                f"The global variable '{name}' shadows an earlier global variable"
             )
 
         var = Variable(name, var_type, type_name)

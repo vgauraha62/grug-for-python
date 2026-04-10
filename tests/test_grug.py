@@ -208,7 +208,7 @@ def test_grug(
             grug_file = id_map[file_id]
             assert grug_file
             assert current_entity
-            on_fn_decl = grug_file.on_fns.get(on_fn_name)
+            on_fn_decl = grug_file.on_fns.get(on_fn_name) # type: ignore
             if not on_fn_decl:
                 raise RuntimeError(
                     f"The function '{on_fn_name}' is not defined by the file {grug_file.relative_path}"
@@ -282,7 +282,11 @@ def test_grug(
     @ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_char_p)
     def game_fn_error(state_ptr: int, reason: bytes) -> None:
         nonlocal _game_fn_error_reason
-        _game_fn_error_reason = ctypes.string_at(reason).decode()
+        # Handle None case for reason
+        if reason:
+            _game_fn_error_reason = ctypes.string_at(reason).decode()
+        else:
+            _game_fn_error_reason = ""
 
     @ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p)
     def create_grug_state(tests_path: bytes, mod_api_path: bytes) -> int:
@@ -292,6 +296,7 @@ def test_grug(
             mod_api_path=ctypes.string_at(tests_path).decode(),
             mods_dir_path=ctypes.string_at(mod_api_path).decode(),
         )
+        assert state is not None, "grug.init() returned None"
         state.next_id = 42
         GameFnRegistrator(state, grug_lib).register_game_fns()
         return 0
